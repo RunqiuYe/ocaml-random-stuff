@@ -1,0 +1,5 @@
+(executable
+ (name echo)
+ (libraries core base stdio core_bench async cohttp)
+ (preprocess
+  (pps ppx_jane ppx_inline_test ppx_assert)))

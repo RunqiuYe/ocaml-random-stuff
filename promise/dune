@@ -1,0 +1,3 @@
+(executable
+ (name promise)
+ (libraries lwt.unix))
