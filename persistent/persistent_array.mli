@@ -12,3 +12,4 @@ val iter : ('a -> unit) -> 'a t -> unit
 val iteri : (int -> 'a -> unit) -> 'a t -> unit
 val fold_left : ('a -> 'b -> 'a) -> 'a -> 'b t -> 'a
 val fold_right : ('a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+val to_string : 'a t -> ('a -> string) -> string

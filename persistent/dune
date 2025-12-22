@@ -1,7 +1,9 @@
 (library
  (name persistent_array)
- (modules persistent_array))
+ (modules persistent_array)
+ (libraries base))
 
-(library
- (name persistent_segtree)
- (modules persistent_segtree))
+(test
+ (name persistent_array_test)
+ (modules persistent_array_test)
+ (libraries persistent_array))

@@ -1,5 +1,7 @@
 (* Implementation of persistent array using sparse segment tree *)
 
+open Base
+
 type 'a tree = 'a data ref
 and 'a data = Leaf of 'a | Node of 'a tree * 'a tree
 
@@ -48,7 +50,7 @@ let set t i x =
 
 let to_list t =
   let n, _ = t in
-  List.init n (fun i -> get t i)
+  List.init n ~f:(fun i -> get t i)
 
 let iter f t =
   let n, _ = t in
@@ -56,25 +58,26 @@ let iter f t =
     f (get t i)
   done
 
-let iteri f t = 
-  let n, _ = t in 
-  for i = 0 to n - 1 do 
+let iteri f t =
+  let n, _ = t in
+  for i = 0 to n - 1 do
     f i (get t i)
   done
 
-let rec fold_left_cps f acc t i = 
-  let n, _ = t in 
+let rec fold_left_cps f acc t i =
+  let n, _ = t in
   if i = n - 1 then f acc (get t (n - 1))
   else fold_left_cps f (f acc (get t i)) t (i + 1)
 
-let rec fold_right_cps f t acc i = 
-  if i = 0 then f (get t 0) acc 
-  else fold_right_cps f t (f (get t i) acc) (i - 1)
+let rec fold_right_cps f t acc i =
+  if i = 0 then f (get t 0) acc else fold_right_cps f t (f (get t i) acc) (i - 1)
 
-let fold_left f acc t = 
-  fold_left_cps f acc t 0
+let fold_left f acc t = fold_left_cps f acc t 0
 
-let fold_right f t acc = 
-  let n, _ = t in 
+let fold_right f t acc =
+  let n, _ = t in
   fold_right_cps f t acc (n - 1)
-  
+
+let to_string t f =
+  let l = to_list t in
+  "[| " ^ (String.concat ~sep:"; " (List.map ~f l)) ^ " |]"
