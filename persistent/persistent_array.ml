@@ -3,12 +3,13 @@
 open Base
 
 type 'a tree = 'a data ref
-and 'a data = Leaf of 'a | Node of 'a tree * 'a tree
+and 'a data = Empty | Leaf of 'a | Node of 'a tree * 'a tree
 
-type 'a t = int * 'a tree
+type 'a t = { length : int; tree : 'a tree }
 
 let rec build l r f =
-  if l = r then ref (Leaf (f l))
+  if l > r then (ref Empty)
+  else if l = r then ref (Leaf (f l))
   else
     let mid = l + ((r - l) / 2) in
     ref (Node (build l mid f, build (mid + 1) r f))
@@ -33,51 +34,44 @@ let rec update tree l r i x =
         else ref (Node (ltree, update rtree (mid + 1) r i x))
     | _ -> failwith "unreachable case"
 
-let make n x = (n, build 0 (n - 1) (fun _ -> x))
-let init n f = (n, build 0 (n - 1) f)
-
-let length t =
-  let n, _ = t in
-  n
+let make n x = { length = n; tree = build 0 (n - 1) (fun _ -> x) }
+let init n f = { length = n; tree = build 0 (n - 1) f }
+let length t = t.length
 
 let get t i =
-  let n, tree = t in
-  query tree 0 (n - 1) i
+  if i < 0 || i >= t.length then raise (Invalid_argument "out of bound access")
+  else query t.tree 0 (t.length - 1) i
 
 let set t i x =
-  let n, tree = t in
-  (n, update tree 0 (n - 1) i x)
+  if i < 0 || i >= t.length then raise (Invalid_argument "out of bound access")
+  else { length = t.length; tree = update t.tree 0 (t.length - 1) i x }
 
-let to_list t =
-  let n, _ = t in
-  List.init n ~f:(fun i -> get t i)
+let to_list t = List.init t.length ~f:(fun i -> get t i)
 
 let iter f t =
-  let n, _ = t in
-  for i = 0 to n - 1 do
+  for i = 0 to t.length - 1 do
     f (get t i)
   done
 
 let iteri f t =
-  let n, _ = t in
-  for i = 0 to n - 1 do
+  for i = 0 to t.length - 1 do
     f i (get t i)
   done
 
 let rec fold_left_cps f acc t i =
-  let n, _ = t in
+  let n = t.length in
   if i = n - 1 then f acc (get t (n - 1))
   else fold_left_cps f (f acc (get t i)) t (i + 1)
 
 let rec fold_right_cps f t acc i =
   if i = 0 then f (get t 0) acc else fold_right_cps f t (f (get t i) acc) (i - 1)
 
-let fold_left f acc t = fold_left_cps f acc t 0
+let fold_left f acc t = if t.length = 0 then acc else fold_left_cps f acc t 0
 
 let fold_right f t acc =
-  let n, _ = t in
-  fold_right_cps f t acc (n - 1)
+  let n = t.length in
+  if n = 0 then acc else fold_right_cps f t acc (n - 1)
 
 let to_string t f =
   let l = to_list t in
-  "[| " ^ (String.concat ~sep:"; " (List.map ~f l)) ^ " |]"
+  "[| " ^ String.concat ~sep:"; " (List.map ~f l) ^ " |]"
