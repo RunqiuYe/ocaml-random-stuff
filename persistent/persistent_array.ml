@@ -8,7 +8,7 @@ and 'a data = Empty | Leaf of 'a | Node of 'a tree * 'a tree
 type 'a t = { length : int; tree : 'a tree }
 
 let rec build l r f =
-  if l > r then (ref Empty)
+  if l > r then ref Empty
   else if l = r then ref (Leaf (f l))
   else
     let mid = l + ((r - l) / 2) in
