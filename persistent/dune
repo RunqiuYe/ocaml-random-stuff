@@ -7,3 +7,7 @@
  (name persistent_array_test)
  (modules persistent_array_test)
  (libraries persistent_array))
+
+(library
+ (name persistent_segtree)
+ (modules persistent_segtree))
