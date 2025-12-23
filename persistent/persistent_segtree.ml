@@ -1,12 +1,10 @@
 (* Implementation of persistent segment tree *)
 
-type 'a tree = 'a data ref
-and 'a data = Empty | Leaf of 'a | Node of 'a * 'a tree * 'a tree
-
+type 'a tree = Empty | Leaf of 'a | Node of 'a * 'a tree * 'a tree
 type 'a t = { length : int; pull : 'a -> 'a -> 'a; tree : 'a tree }
 
 let combine pull ltree rtree =
-  match (!ltree, !rtree) with
+  match (ltree, rtree) with
   | Leaf x, Leaf y -> pull x y
   | Leaf x, Node (y, _, _) -> pull x y
   | Node (x, _, _), Leaf y -> pull x y
@@ -14,14 +12,14 @@ let combine pull ltree rtree =
   | _ -> failwith "unreachable case"
 
 let rec build l r pull init_f =
-  if l < r then ref Empty
-  else if l = r then ref (Leaf (init_f l))
+  if l < r then Empty
+  else if l = r then Leaf (init_f l)
   else
     let mid = l + ((r - l) / 2) in
     let ltree, rtree =
       (build l mid pull init_f, build (mid + 1) r pull init_f)
     in
-    ref (Node (combine pull ltree rtree, ltree, rtree))
+    Node (combine pull ltree rtree, ltree, rtree)
 
 let make n pull x =
   { length = n; pull; tree = build 0 (n - 1) pull (fun _ -> x) }
@@ -31,13 +29,13 @@ let length t = t.length
 
 let rec query_helper tree pull l r ql qr =
   if ql <= l && r <= qr then
-    match !tree with
+    match tree with
     | Leaf x -> x
     | Node (x, _, _) -> x
     | _ -> failwith "unreachable case"
   else
     let mid = l + ((r - l) / 2) in
-    match !tree with
+    match tree with
     | Node (_, ltree, rtree) ->
         if ql <= mid && qr > mid then
           pull
@@ -55,19 +53,19 @@ let query t ql qr =
 
 let rec update_helper tree pull l r i update_f =
   if l = r then
-    match !tree with
-    | Leaf x -> ref (Leaf (update_f x))
+    match tree with
+    | Leaf x -> Leaf (update_f x)
     | _ -> failwith "unreachable case"
   else
     let mid = l + ((r - l) / 2) in
-    match !tree with
+    match tree with
     | Node (_, ltree, rtree) ->
         if i <= mid then
           let new_ltree = update_helper ltree pull l mid i update_f in
-          ref (Node (combine pull new_ltree rtree, new_ltree, rtree))
+          Node (combine pull new_ltree rtree, new_ltree, rtree)
         else
           let new_rtree = update_helper rtree pull (mid + 1) r i update_f in
-          ref (Node (combine pull ltree new_rtree, ltree, new_rtree))
+          Node (combine pull ltree new_rtree, ltree, new_rtree)
     | _ -> failwith "unreachable case"
 
 let update t i update_f =

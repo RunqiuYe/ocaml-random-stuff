@@ -11,3 +11,13 @@
 (library
  (name persistent_segtree)
  (modules persistent_segtree))
+
+(test
+ (name persistent_segtree_test)
+ (modules persistent_segtree_test)
+ (libraries persistent_segtree))
+
+(library
+ (name treap)
+ (modules treap)
+ (libraries base))

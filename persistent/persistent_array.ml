@@ -2,36 +2,33 @@
 
 open Base
 
-type 'a tree = 'a data ref
-and 'a data = Empty | Leaf of 'a | Node of 'a tree * 'a tree
-
+type 'a tree = Empty | Leaf of 'a | Node of 'a tree * 'a tree
 type 'a t = { length : int; tree : 'a tree }
 
 let rec build l r f =
-  if l > r then ref Empty
-  else if l = r then ref (Leaf (f l))
+  if l > r then Empty
+  else if l = r then Leaf (f l)
   else
     let mid = l + ((r - l) / 2) in
-    ref (Node (build l mid f, build (mid + 1) r f))
+    Node (build l mid f, build (mid + 1) r f)
 
 let rec query tree l r i =
-  if l = r then
-    match !tree with Leaf x -> x | _ -> failwith "unreachable case"
+  if l = r then match tree with Leaf x -> x | _ -> failwith "unreachable case"
   else
-    match !tree with
+    match tree with
     | Node (ltree, rtree) ->
         let mid = l + ((r - l) / 2) in
         if i <= mid then query ltree l mid i else query rtree (mid + 1) r i
     | _ -> failwith "unreachable case"
 
 let rec update tree l r i x =
-  if l = r then ref (Leaf x)
+  if l = r then Leaf x
   else
-    match !tree with
+    match tree with
     | Node (ltree, rtree) ->
         let mid = l + ((r - l) / 2) in
-        if i <= mid then ref (Node (update ltree l mid i x, rtree))
-        else ref (Node (ltree, update rtree (mid + 1) r i x))
+        if i <= mid then Node (update ltree l mid i x, rtree)
+        else Node (ltree, update rtree (mid + 1) r i x)
     | _ -> failwith "unreachable case"
 
 let make n x = { length = n; tree = build 0 (n - 1) (fun _ -> x) }
