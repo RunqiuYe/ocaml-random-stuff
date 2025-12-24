@@ -204,7 +204,7 @@ struct
     (l, Option.map (fun (v, _) -> v) res, r)
 end
 
-module MakeAugTreao (Key : ComparableType) (Val : MonoidType) :
+module MakeAugTreap (Key : ComparableType) (Val : MonoidType) :
   Aug_Bst_intf with type Key.t = Key.t and type Val.t = Val.t = struct
   module TreapBase = MakeTreapBase (Key) (Val)
 
