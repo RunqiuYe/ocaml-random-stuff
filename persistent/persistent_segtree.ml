@@ -1,81 +1,111 @@
 (* Implementation of persistent segment tree *)
 
-type 'a tree = Empty | Leaf of 'a | Node of 'a * 'a tree * 'a tree
-type 'a t = { length : int; pull : 'a -> 'a -> 'a; tree : 'a tree }
+module type MonoidType = sig
+  type t
 
-let combine pull ltree rtree =
-  match (ltree, rtree) with
-  | Leaf x, Leaf y -> pull x y
-  | Leaf x, Node (y, _, _) -> pull x y
-  | Node (x, _, _), Leaf y -> pull x y
-  | Node (x, _, _), Node (y, _, _) -> pull x y
-  | _ -> failwith "unreachable case"
+  val id : t
+  val f : t -> t -> t
+end
 
-let rec build l r pull init_f =
-  if l < r then Empty
-  else if l = r then Leaf (init_f l)
-  else
-    let mid = l + ((r - l) / 2) in
-    let ltree, rtree =
-      (build l mid pull init_f, build (mid + 1) r pull init_f)
-    in
-    Node (combine pull ltree rtree, ltree, rtree)
+module type SegTree_intf = sig
+  module Val : MonoidType
 
-let make n pull x =
-  { length = n; pull; tree = build 0 (n - 1) pull (fun _ -> x) }
+  type t
 
-let init n pull f = { length = n; pull; tree = build 0 (n - 1) pull f }
-let length t = t.length
+  val make : int -> Val.t -> t
+  val init : int -> (int -> Val.t) -> t
+  val length : t -> int
 
-let rec query_helper tree pull l r ql qr =
-  if ql <= l && r <= qr then
-    match tree with
-    | Leaf x -> x
-    | Node (x, _, _) -> x
-    | _ -> failwith "unreachable case"
-  else
-    let mid = l + ((r - l) / 2) in
-    match tree with
-    | Node (_, ltree, rtree) ->
-        if ql <= mid && qr > mid then
-          pull
-            (query_helper ltree pull l mid ql qr)
-            (query_helper rtree pull (mid + 1) r ql qr)
-        else if ql <= mid then query_helper ltree pull l mid ql qr
-        else if qr > mid then query_helper rtree pull (mid + 1) r ql qr
-        else failwith "unreachable case"
-    | _ -> failwith "unreachable case"
+  val query : t -> int -> int -> Val.t
+  (** [query] supports range query in the tree **)
 
-let query t ql qr =
-  if 0 <= ql && ql <= qr && qr < t.length then
-    query_helper t.tree t.pull 0 (t.length - 1) ql qr
-  else raise (Invalid_argument "invalid range")
+  val update : t -> int -> (Val.t -> Val.t) -> t
 
-let rec update_helper tree pull l r i update_f =
-  if l = r then
-    match tree with
-    | Leaf x -> Leaf (update_f x)
-    | _ -> failwith "unreachable case"
-  else
-    let mid = l + ((r - l) / 2) in
-    match tree with
-    | Node (_, ltree, rtree) ->
-        if i <= mid then
-          let new_ltree = update_helper ltree pull l mid i update_f in
-          Node (combine pull new_ltree rtree, new_ltree, rtree)
-        else
-          let new_rtree = update_helper rtree pull (mid + 1) r i update_f in
-          Node (combine pull ltree new_rtree, ltree, new_rtree)
-    | _ -> failwith "unreachable case"
+  val set : t -> int -> Val.t -> t
+  (** [update] and [set] support single point update in the tree **)
+end
 
-let update t i update_f =
-  let n = t.length in
-  if i < 0 || i >= n then raise (Invalid_argument "out of bound access")
-  else
-    {
-      length = n;
-      pull = t.pull;
-      tree = update_helper t.tree t.pull 0 (n - 1) i update_f;
-    }
+module MakeSegTree (Val : MonoidType) : SegTree_intf with type Val.t = Val.t =
+struct
+  module Val = Val
 
-let set t i x = update t i (fun _ -> x)
+  type tree =
+    | Leaf
+    | Node of { reduced_value : Val.t; left : tree; right : tree }
+
+  type t = { length : int; data : tree }
+
+  let combine left right =
+    match (left, right) with
+    | Leaf, Node { reduced_value; _ } -> reduced_value
+    | Node { reduced_value; _ }, Leaf -> reduced_value
+    | Node { reduced_value = rval1; _ }, Node { reduced_value = rval2; _ } ->
+        Val.f rval1 rval2
+    | Leaf, Leaf -> Val.id
+
+  let rec build l r init_f =
+    if l < r then Leaf
+    else if l = r then
+      Node { reduced_value = init_f l; left = Leaf; right = Leaf }
+    else
+      let mid = l + ((r - l) / 2) in
+      let left, right = (build l mid init_f, build (mid + 1) r init_f) in
+      Node { reduced_value = combine left right; left; right }
+
+  let rec query_helper tree l r ql qr =
+    if ql <= l && r <= qr then
+      match tree with
+      | Leaf -> failwith "unreachable case"
+      | Node { reduced_value; _ } -> reduced_value
+    else
+      let mid = l + ((r - l) / 2) in
+      match tree with
+      | Leaf -> failwith "unreachable case"
+      | Node { left; right; _ } ->
+          let lval =
+            if ql <= mid then query_helper left l mid ql qr else Val.id
+          in
+          let rval =
+            if qr > mid then query_helper right (mid + 1) r ql qr else Val.id
+          in
+          Val.f lval rval
+
+  let rec update_helper tree l r update_i update_f =
+    if l = r then
+      match tree with
+      | Leaf -> failwith "unreachable case"
+      | Node { reduced_value; _ } ->
+          Node
+            {
+              reduced_value = update_f reduced_value;
+              left = Leaf;
+              right = Leaf;
+            }
+    else
+      let mid = l + ((r - l) / 2) in
+      match tree with
+      | Leaf -> failwith "unreachable case"
+      | Node { left; right; _ } ->
+          if update_i <= mid then
+            let new_left = update_helper left l mid update_i update_f in
+            Node
+              { reduced_value = combine new_left right; left = new_left; right }
+          else
+            let new_right = update_helper right (mid + 1) r update_i update_f in
+            Node
+              {
+                reduced_value = combine left new_right;
+                left;
+                right = new_right;
+              }
+
+  let make n x = { length = n; data = build 0 (n - 1) (fun _ -> x) }
+  let init n f = { length = n; data = build 0 (n - 1) f }
+  let length t = t.length
+  let query t ql qr = query_helper t.data 0 (t.length - 1) ql qr
+
+  let update t i f =
+    { length = t.length; data = update_helper t.data 0 (t.length - 1) i f }
+
+  let set t i x = update t i (fun _ -> x)
+end
