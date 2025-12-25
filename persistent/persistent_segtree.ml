@@ -20,9 +20,11 @@ module type SegTree_intf = sig
   (** [query] supports range query in the tree **)
 
   val update : t -> int -> (Val.t -> Val.t) -> t
+  (** [update t i f] gives a new segment tree where index i is modified with
+      function f. That is the original value x at i is changed to f i **)
 
   val set : t -> int -> Val.t -> t
-  (** [update] and [set] support single point update in the tree **)
+  (** [set t i x] gives a new segment tree where index i is set with value x **)
 end
 
 module MakeSegTree (Val : MonoidType) : SegTree_intf with type Val.t = Val.t =

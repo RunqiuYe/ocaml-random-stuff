@@ -29,7 +29,7 @@ let () =
     test n
   done
 
-(* fold over an array `a` while accessing to another version (`b` here) *)
+(** fold over an array [a] while accessing to another version [b] **)
 let arr = init 3 (fun i -> i)
 let () = assert (sum arr = 3)
 let b = set arr 2 3
