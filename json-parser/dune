@@ -3,7 +3,7 @@
 
 (ocamllex lexer)
 
-(library
- (name json_parser)
- (modules json parser lexer)
- (libraries core))
+(executable
+ (name driver)
+ (modules json driver parser lexer)
+ (libraries core core_unix.command_unix))
