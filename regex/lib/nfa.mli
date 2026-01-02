@@ -1,6 +1,6 @@
 type t
 
-val build : Regex.t -> t
+val of_regex : Regex.t -> t
 (** [build regex] build an NFA from a regular expression [regex].
 
     Requires: [regex] is in standard form. That is, for any subexpression
@@ -11,3 +11,5 @@ val step : char -> t -> t
 
 val is_accept : t -> bool
 (** [is_accept t] returns true if the NFA [t] is currently at accept state *)
+
+val is_match : Regex.t -> string -> bool
