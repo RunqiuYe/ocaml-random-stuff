@@ -17,13 +17,18 @@ type nfa_fragment = {
 type t = { current_states : state list (* possible current state *) }
 
 module IntSet = Set.Make (Int)
+(* used to keep track of already processed states *)
 
 let make_state state id = { state; id }
 
 (** [build r id_base] build nfa_fragment for [r] and new id_base *)
 let rec build_frag (regex : Regex.t) (id_base : int) : nfa_fragment * int =
   match regex with
-  | Epsilon -> ({ start = make_state Accept id_base; outs = [] }, id_base + 1)
+  | Epsilon ->
+      (* use a split to represent an empty state with an undermined out pointer *)
+      let out = ref (make_state Undetermined 0) in
+      let s = make_state (Split { out1 = out; out2 = out }) id_base in
+      ({ start = s; outs = [ out ] }, id_base + 1)
   | Char c ->
       let out = ref (make_state Undetermined 0) in
       let s = make_state (Direct { match_c = c; out }) id_base in

@@ -1,10 +1,7 @@
 type t
 
 val of_regex : Regex.t -> t
-(** [build regex] build an NFA from a regular expression [regex].
-
-    Requires: [regex] is in standard form. That is, for any subexpression
-    [Star r], the language of [r] doe not contain the empty string. *)
+(** [build regex] build an NFA from a regular expression [regex] *)
 
 val step : char -> t -> t
 (** [step c t] step the NFA [t] with character [c] and return an NFA [t] *)

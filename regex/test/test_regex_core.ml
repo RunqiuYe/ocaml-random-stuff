@@ -2,6 +2,58 @@ open Regex_core
 open Regex_core.Regex
 
 let () =
+  let r = Epsilon in
+  assert (Nfa.is_match r "");
+  assert (not (Nfa.is_match r "a"));
+  assert (not (Nfa.is_match r "aa"))
+
+let () =
+  let r = Concat (Epsilon, Char 'a') in
+  assert (Nfa.is_match r "a");
+  assert (not (Nfa.is_match r ""));
+  assert (not (Nfa.is_match r "aa"))
+
+let () =
+  let r = Concat (Char 'a', Epsilon) in
+  assert (Nfa.is_match r "a");
+  assert (not (Nfa.is_match r ""));
+  assert (not (Nfa.is_match r "aa"))
+
+let () =
+  let r = Concat (Char 'a', Epsilon) in
+  assert (Nfa.is_match r "a");
+  assert (not (Nfa.is_match r ""));
+  assert (not (Nfa.is_match r "aa"))
+
+let () =
+  let r = Concat (Alt (Char 'a', Char 'b'), Char 'c') in
+  assert (Nfa.is_match r "ac");
+  assert (Nfa.is_match r "bc");
+  assert (not (Nfa.is_match r "abc"));
+  assert (not (Nfa.is_match r "bac"));
+  assert (not (Nfa.is_match r "c"))
+
+let () =
+  let r = Star Epsilon in
+  assert (Nfa.is_match r "");
+  assert (not (Nfa.is_match r "a"))
+
+let () =
+  let r = Star (Alt (Char 'a', Char 'b')) in
+  assert (Nfa.is_match r "");
+  assert (Nfa.is_match r "a");
+  assert (Nfa.is_match r "b");
+  assert (Nfa.is_match r "abbaab");
+  assert (not (Nfa.is_match r "abc"))
+
+let () =
+  let r = Star (Maybe (Char 'a')) in
+  assert (Nfa.is_match r "");
+  assert (Nfa.is_match r "aaaaa");
+  assert (Nfa.is_match r "aaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+  assert (not (Nfa.is_match r "aaaaaaaaaaaaaab"))
+
+let () =
   let r = Char 'a' in
   assert (Nfa.is_match r "a");
   assert (not (Nfa.is_match r "b"));
@@ -14,6 +66,21 @@ let () =
   assert (not (Nfa.is_match r "aa"));
   assert (not (Nfa.is_match r "ab"));
   assert (not (Nfa.is_match r "bb"))
+
+let () =
+  let r = Maybe (Maybe (Char 'a')) in
+  assert (Nfa.is_match r "");
+  assert (Nfa.is_match r "a");
+  assert (not (Nfa.is_match r "aa"))
+
+let () =
+  let r = Concat (Maybe (Char 'a'), Maybe (Char 'b')) in
+  assert (Nfa.is_match r "");
+  assert (Nfa.is_match r "a");
+  assert (Nfa.is_match r "b");
+  assert (Nfa.is_match r "ab");
+  assert (not (Nfa.is_match r "ba"));
+  assert (not (Nfa.is_match r "aa"))
 
 let () =
   let r = Star (Char 'a') in
