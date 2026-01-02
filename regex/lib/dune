@@ -1,4 +1,3 @@
 (library
  (name regex_core)
- (modules regex nfa)
- (libraries stdio))
+ (modules regex nfa))

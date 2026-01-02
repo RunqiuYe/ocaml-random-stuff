@@ -1,5 +1,3 @@
-open! Stdio
-
 type state_node =
   | Undetermined
   | Accept
@@ -20,13 +18,6 @@ type t = {
   current_states : state list; (* possible current state *)
   gen : int; (* number of generations, or number of character consumed *)
 }
-
-(* let print_state s =
-  match s.state with
-  | Undetermined -> printf "undetermined, "
-  | Accept -> printf "accept, "
-  | Direct { match_c; _ } -> printf "direct (%c, x), " match_c
-  | Split _ -> printf "split (x, x), " *)
 
 let rec build_frag (regex : Regex.t) : nfa_fragment =
   let make_state state = { state; last_gen = 0 } in
@@ -89,9 +80,6 @@ let step c t =
     | _ -> None
   in
   let new_states = get_next new_gen (List.filter_map f t.current_states) [] in
-  (* printf "current state: [ ";
-  List.iter print_state new_states;
-  printf " ]\n"; *)
   { current_states = new_states; gen = new_gen }
 
 let is_accept t =
