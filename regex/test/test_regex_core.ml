@@ -119,19 +119,14 @@ let () =
   assert (Nfa.is_match nfa "a");
   assert (not (Nfa.is_match nfa ""))
 
+let concat_list regexps =
+  List.fold_left (fun r1 r2 -> Concat (r1, r2)) Epsilon regexps
+
 let () =
-  let m = Maybe (Char 'a') in
-  let a = Char 'a' in
-  let nm =
-    Concat
-      ( Concat (Concat (m, m), Concat (m, m)),
-        Concat (Concat (m, m), Concat (m, m)) )
-  in
-  let na =
-    Concat
-      ( Concat (Concat (a, a), Concat (a, a)),
-        Concat (Concat (a, a), Concat (a, a)) )
-  in
+  let m_list = List.init 8 (fun _ -> Maybe (Char 'a')) in
+  let a_list = List.init 8 (fun _ -> Char 'a') in
+  let nm = concat_list m_list in
+  let na = concat_list a_list in
   let r = Concat (nm, na) in
   let nfa = Nfa.of_regex r in
   assert (Nfa.is_match nfa "aaaaaaaaaaaaaaaa");
@@ -139,26 +134,10 @@ let () =
   assert (Nfa.is_match nfa "aaaaaaaa")
 
 let () =
-  let m = Maybe (Char 'a') in
-  let a = Char 'a' in
-  let nm =
-    Concat
-      ( Concat
-          ( Concat (Concat (m, m), Concat (m, m)),
-            Concat (Concat (m, m), Concat (m, m)) ),
-        Concat
-          ( Concat (Concat (m, m), Concat (m, m)),
-            Concat (Concat (m, m), Concat (m, m)) ) )
-  in
-  let na =
-    Concat
-      ( Concat
-          ( Concat (Concat (a, a), Concat (a, a)),
-            Concat (Concat (a, a), Concat (a, a)) ),
-        Concat
-          ( Concat (Concat (a, a), Concat (a, a)),
-            Concat (Concat (a, a), Concat (a, a)) ) )
-  in
+  let m_list = List.init 16 (fun _ -> Maybe (Char 'a')) in
+  let a_list = List.init 16 (fun _ -> Char 'a') in
+  let nm = concat_list m_list in
+  let na = concat_list a_list in
   let r = Concat (nm, na) in
   let nfa = Nfa.of_regex r in
   assert (Nfa.is_match nfa "aaaaaaaaaaaaaaaa");
@@ -166,51 +145,13 @@ let () =
   assert (Nfa.is_match nfa "aaaaaaaaaaaaaaaaaaaaaaaaa")
 
 let () =
-  let m = Maybe (Char 'a') in
-  let a = Char 'a' in
-  let nm =
-    Concat
-      ( Concat
-          ( Concat
-              ( Concat (Concat (m, m), Concat (m, m)),
-                Concat (Concat (m, m), Concat (m, m)) ),
-            Concat
-              ( Concat (Concat (m, m), Concat (m, m)),
-                Concat (Concat (m, m), Concat (m, m)) ) ),
-        Concat
-          ( Concat
-              ( Concat (Concat (m, m), Concat (m, m)),
-                Concat (Concat (m, m), Concat (m, m)) ),
-            Concat
-              ( Concat (Concat (m, m), Concat (m, m)),
-                Concat (Concat (m, m), Concat (m, m)) ) ) )
-  in
-  let na =
-    Concat
-      ( Concat
-          ( Concat
-              ( Concat (Concat (a, a), Concat (a, a)),
-                Concat (Concat (a, a), Concat (a, a)) ),
-            Concat
-              ( Concat (Concat (a, a), Concat (a, a)),
-                Concat (Concat (a, a), Concat (a, a)) ) ),
-        Concat
-          ( Concat
-              ( Concat (Concat (a, a), Concat (a, a)),
-                Concat (Concat (a, a), Concat (a, a)) ),
-            Concat
-              ( Concat (Concat (a, a), Concat (a, a)),
-                Concat (Concat (a, a), Concat (a, a)) ) ) )
-  in
+  let m_list = List.init 128 (fun _ -> Maybe (Char 'a')) in
+  let a_list = List.init 128 (fun _ -> Char 'a') in
+  let nm = concat_list m_list in
+  let na = concat_list a_list in
   let r = Concat (nm, na) in
   let nfa = Nfa.of_regex r in
-  assert (Nfa.is_match nfa "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-  assert (
-    Nfa.is_match nfa
-      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-  assert (not (Nfa.is_match nfa "aaaaaaaaaaaaaaaaaaaaaaaaa"));
-  assert (
-    not
-      (Nfa.is_match nfa
-         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
-  assert (Nfa.is_match nfa "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+  assert (Nfa.is_match nfa (String.make 128 'a'));
+  assert (Nfa.is_match nfa (String.make 256 'a'));
+  assert (Nfa.is_match nfa (String.make 157 'a'));
+  assert (not (Nfa.is_match nfa (String.make 300 'a')))
