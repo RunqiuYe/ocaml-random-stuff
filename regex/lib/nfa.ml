@@ -103,8 +103,7 @@ let is_accept t =
   in
   List.exists pred t.current_states
 
-let is_match regex s =
-  let t = of_regex regex in
+let is_match t s =
   let chars = String.to_seq s |> List.of_seq in
   let rec consume chars t =
     match chars with [] -> is_accept t | c :: rest -> consume rest (step c t)

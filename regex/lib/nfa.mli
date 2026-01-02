@@ -9,4 +9,5 @@ val step : char -> t -> t
 val is_accept : t -> bool
 (** [is_accept t] returns true if the NFA [t] is currently at accept state *)
 
-val is_match : Regex.t -> string -> bool
+val is_match : t -> string -> bool
+(** [is_match t s] returns true if the NFA [t] accepts the string [s] *)
