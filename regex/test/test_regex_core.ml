@@ -120,7 +120,12 @@ let () =
   in
   let r = Concat (nm, na) in
   assert (Nfa.is_match r "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-  assert (Nfa.is_match r "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+  assert (
+    Nfa.is_match r
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
   assert (not (Nfa.is_match r "aaaaaaaaaaaaaaaaaaaaaaaaa"));
-  assert (not (Nfa.is_match r "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+  assert (
+    not
+      (Nfa.is_match r
+         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
   assert (Nfa.is_match r "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
