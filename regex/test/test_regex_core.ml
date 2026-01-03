@@ -155,3 +155,17 @@ let () =
   assert (Nfa.is_match nfa (String.make 256 'a'));
   assert (Nfa.is_match nfa (String.make 157 'a'));
   assert (not (Nfa.is_match nfa (String.make 300 'a')))
+
+let () =
+  let r = Star (Char 'a') in
+  let nfa = Nfa.of_regex r in
+  assert (Nfa.match_prefix nfa "aaaaab" = Some 5);
+  assert (Nfa.match_prefix nfa "bbbbb" = Some 0);
+  assert (Nfa.match_prefix nfa "abbbbb" = Some 1)
+
+let () =
+  let r = Maybe (Concat (Char 'a', Char 'b')) in
+  let nfa = Nfa.of_regex r in
+  assert (Nfa.match_prefix nfa "aaab" = Some 0);
+  assert (Nfa.match_prefix nfa "ababab" = Some 2);
+  assert (Nfa.match_prefix nfa "" = Some 0)

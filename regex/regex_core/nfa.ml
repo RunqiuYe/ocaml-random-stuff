@@ -25,7 +25,7 @@ let make_state state id = { state; id }
 let rec build_frag (regex : Regex.t) (id_base : int) : nfa_fragment * int =
   match regex with
   | Epsilon ->
-      (* use a split to represent an empty state with an undermined out pointer *)
+      (* use a split to represent an empty state with an undetermined out pointer *)
       let out = ref (make_state Undetermined 0) in
       let s = make_state (Split { out1 = out; out2 = out }) id_base in
       ({ start = s; outs = [ out ] }, id_base + 1)
@@ -94,6 +94,8 @@ let step c t =
   in
   { current_states = new_states }
 
+let is_dead t = List.is_empty t.current_states
+
 let is_accept t =
   let pred s =
     match s.state with
@@ -109,3 +111,16 @@ let is_match t s =
     match chars with [] -> is_accept t | c :: rest -> consume rest (step c t)
   in
   consume chars t
+
+let match_prefix t s =
+  let rec loop t s i best =
+    if i = String.length s then best
+    else if is_dead t then best
+    else
+      let t = step s.[i] t in
+      if is_accept t then loop t s (i + 1) (Some (i + 1))
+      else loop t s (i + 1) best
+  in
+  if is_accept t (* case where the empty string is a match *) then
+    loop t s 0 (Some 0)
+  else loop t s 0 None
