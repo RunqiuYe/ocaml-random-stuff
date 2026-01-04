@@ -1,8 +1,8 @@
 type state_node =
   | Undetermined
-  | Accept
+  | Accept of int
   | Direct of { match_c : char; out : state ref }
-  | Split of { out1 : state ref; out2 : state ref }
+  | Split of state ref list
 
 and state = {
   state : state_node;
@@ -15,6 +15,7 @@ type nfa_fragment = {
 }
 
 type t = { current_states : state list (* possible current state *) }
+type compiled = state (* start state *)
 
 module IntSet = Set.Make (Int)
 (* used to keep track of already processed states *)
@@ -27,7 +28,7 @@ let rec build_frag (regex : Regex.t) (id_base : int) : nfa_fragment * int =
   | Epsilon ->
       (* use a split to represent an empty state with an undetermined out pointer *)
       let out = ref (make_state Undetermined 0) in
-      let s = make_state (Split { out1 = out; out2 = out }) id_base in
+      let s = make_state (Split [ out ]) id_base in
       ({ start = s; outs = [ out ] }, id_base + 1)
   | Char c ->
       let out = ref (make_state Undetermined 0) in
@@ -42,33 +43,30 @@ let rec build_frag (regex : Regex.t) (id_base : int) : nfa_fragment * int =
       let frag1, base1 = build_frag r1 id_base in
       let frag2, base2 = build_frag r2 base1 in
       ( {
-          start =
-            make_state
-              (Split { out1 = ref frag1.start; out2 = ref frag2.start })
-              base2;
+          start = make_state (Split [ ref frag1.start; ref frag2.start ]) base2;
           outs = frag1.outs @ frag2.outs;
         },
         base2 + 1 )
   | Star r ->
       let frag, base = build_frag r id_base in
       let out2 = ref (make_state Undetermined 0) in
-      let s = make_state (Split { out1 = ref frag.start; out2 }) base in
+      let s = make_state (Split [ ref frag.start; out2 ]) base in
       List.iter (fun sref -> sref := s) frag.outs;
       ({ start = s; outs = [ out2 ] }, base + 1)
   | Maybe r ->
       let frag, base = build_frag r id_base in
       let out = ref (make_state Undetermined 0) in
       ( {
-          start = make_state (Split { out1 = ref frag.start; out2 = out }) base;
+          start = make_state (Split [ ref frag.start; out ]) base;
           outs = frag.outs @ [ out ];
         },
         base + 1 )
   | Multiple r -> 
     let frag, base = build_frag r id_base in 
-    let out2 = ref (make_state Undetermined 0) in 
-    let s = make_state (Split {out1 = ref frag.start; out2}) base in
+    let out = ref (make_state Undetermined 0) in 
+    let s = make_state (Split [ref frag.start; out]) base in
     List.iter (fun sref -> sref := s) frag.outs;
-    ( {start = frag.start; outs = [out2]}, base + 1)
+    ( {start = frag.start; outs = [out]}, base + 1)
 
 let rec get_next next_states id_set acc =
   match next_states with
@@ -78,15 +76,28 @@ let rec get_next next_states id_set acc =
       else
         match s.state with
         | Undetermined -> failwith "unreachable case"
-        | Split { out1; out2 } ->
-            get_next (!out1 :: !out2 :: rest) (IntSet.add s.id id_set) acc
+        | Split outs ->
+            get_next (List.map ( ! ) outs @ rest) (IntSet.add s.id id_set) acc
         | _ -> get_next rest (IntSet.add s.id id_set) (s :: acc))
 
-let of_regex (regex : Regex.t) : t =
-  let frag, base = build_frag regex 0 in
-  let acc = make_state Accept (base + 1) in
+let of_regex regex id_base i =
+  let frag, id_base = build_frag regex id_base in
+  let acc = make_state (Accept i) (id_base + 1) in
   List.iter (fun sref -> sref := acc) frag.outs;
-  { current_states = get_next [ frag.start ] IntSet.empty [] }
+  frag.start, id_base + 2
+
+let compile regex_list =
+  let rec build_frags regex_list id_base i acc =
+    match regex_list with
+    | [] -> (id_base, acc)
+    | r :: rest ->
+        let start_state, id_base = of_regex r id_base i in
+        build_frags rest id_base (i + 1) (start_state :: acc)
+  in
+  let id_base, start_states = build_frags regex_list 0 0 [] in
+  make_state (Split (List.map ref start_states)) id_base
+
+let start comp = { current_states = get_next [ comp ] IntSet.empty [] }
 
 let step c t =
   let f s =
@@ -102,19 +113,14 @@ let step c t =
 
 let is_dead t = List.is_empty t.current_states
 
-let is_accept t =
-  let pred s =
-    match s.state with
-    | Accept -> true
-    | Undetermined -> failwith "unreachable case"
-    | _ -> false
-  in
-  List.exists pred t.current_states
+let accept_patterns t =
+  let pred s = match s.state with Accept i -> Some i | _ -> None in
+  List.filter_map pred t.current_states |> List.sort Int.compare
 
-let is_match t s =
+let match_patterns t s =
   let chars = String.to_seq s |> List.of_seq in
   let rec consume chars t =
-    match chars with [] -> is_accept t | c :: rest -> consume rest (step c t)
+    match chars with [] -> accept_patterns t | c :: rest -> consume rest (step c t)
   in
   consume chars t
 
@@ -124,9 +130,11 @@ let match_prefix t s =
     else if is_dead t then best
     else
       let t = step s.[i] t in
-      if is_accept t then loop t s (i + 1) (Some (i + 1))
+      let acc_p = accept_patterns t in
+      if acc_p <> [] then loop t s (i + 1) (Some (List.hd acc_p, i + 1))
       else loop t s (i + 1) best
   in
-  if is_accept t (* case where the empty string is a match *) then
-    loop t s 0 (Some 0)
+  let acc_p = accept_patterns t in
+  if acc_p <> [] (* case where the empty string is a match *) then
+    loop t s 0 (Some (List.hd acc_p, 0))
   else loop t s 0 None

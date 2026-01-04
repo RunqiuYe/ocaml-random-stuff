@@ -157,6 +157,13 @@ let () =
   assert (not (Nfa.is_match nfa (String.make 300 'a')))
 
 let () =
+  let r = Multiple (Concat (Char 'a', Char 'b')) in
+  let nfa = Nfa.of_regex r in
+  assert (not (Nfa.is_match nfa "aaab"));
+  assert (Nfa.is_match nfa "ababab");
+  assert (not (Nfa.is_match nfa ""))
+
+let () =
   let r = Star (Char 'a') in
   let nfa = Nfa.of_regex r in
   assert (Nfa.match_prefix nfa "aaaaab" = Some 5);
@@ -169,3 +176,23 @@ let () =
   assert (Nfa.match_prefix nfa "aaab" = Some 0);
   assert (Nfa.match_prefix nfa "ababab" = Some 2);
   assert (Nfa.match_prefix nfa "" = Some 0)
+
+let () =
+  let r = Multiple (Concat (Char 'a', Char 'b')) in
+  let nfa = Nfa.of_regex r in
+  assert (Nfa.match_prefix nfa "aaab" = None);
+  assert (Nfa.match_prefix nfa "ababab" = Some 6);
+  assert (Nfa.match_prefix nfa "" = None)
+
+let () = 
+  let rs = [ Star (Char 'a') ] in
+  let nfa = Multi_nfa.compile rs |> Multi_nfa.start in
+  assert (Multi_nfa.match_patterns nfa "aaaaa" <> [])
+
+let () =
+  let rs = [ Star (Char 'a') ] in
+  let nfa = Multi_nfa.compile rs |> Multi_nfa.start in
+  assert (Multi_nfa.match_prefix nfa "aaaaab" = Some (0, 5));
+  assert (Multi_nfa.match_prefix nfa "bbbbb" = Some (0, 0));
+  assert (Multi_nfa.match_prefix nfa "abbbbb" = Some (0, 1))
+
