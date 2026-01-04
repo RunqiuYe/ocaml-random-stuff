@@ -115,7 +115,7 @@ let is_dead t = List.is_empty t.current_states
 
 let accept_patterns t =
   let pred s = match s.state with Accept i -> Some i | _ -> None in
-  List.filter_map pred t.current_states |> List.sort Int.compare
+  List.filter_map pred t.current_states
 
 let match_patterns t s =
   let chars = String.to_seq s |> List.of_seq in
