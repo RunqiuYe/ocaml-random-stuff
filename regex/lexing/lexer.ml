@@ -1,13 +1,9 @@
 open Regex_core
 
-module type TOKEN = sig
-  type t
-end
+type 'token t = int
+type 'token rule = { regex : Regex.t; action : string -> 'token }
 
-module Make (Token : TOKEN) = struct
-  type rule = { regex : Regex.t; action : string -> Token.t }
-  type t
+exception Lexing_error of string
 
-  let compile = failwith ""
-  let read = failwith ""
-end
+let compile = failwith "unimplemented"
+let next = failwith "unimplemented"

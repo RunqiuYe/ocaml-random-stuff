@@ -1,13 +1,12 @@
 open Regex_core
 
-module type TOKEN = sig
-  type t
-end
+type 'token t
+type 'token rule = { regex : Regex.t; action : string -> 'token }
 
-module Make (Token : TOKEN) : sig
-  type rule = { regex : Regex.t; action : string -> Token.t }
-  type t
+exception Lexing_error of string
 
-  val compile : rule list -> t
-  val read : t -> Lexbuf.t -> Token.t
-end
+val compile : 'token rule list -> 'token t
+(** compile a set of rules into a lexer *)
+
+val next : 'token t -> Lexbuf.t -> 'token
+(** read one token from the input *)
