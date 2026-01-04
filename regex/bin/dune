@@ -1,3 +1,4 @@
 (executable
  (public_name regex)
- (name main))
+ (name main)
+ (libraries lexing regex_core))

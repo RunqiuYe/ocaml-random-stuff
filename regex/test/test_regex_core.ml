@@ -184,7 +184,7 @@ let () =
   assert (Nfa.match_prefix nfa "ababab" = Some 6);
   assert (Nfa.match_prefix nfa "" = None)
 
-let () = 
+let () =
   let rs = [ Star (Char 'a') ] in
   let nfa = Multi_nfa.compile rs |> Multi_nfa.start in
   assert (Multi_nfa.match_patterns nfa "aaaaa" <> [])
@@ -195,4 +195,3 @@ let () =
   assert (Multi_nfa.match_prefix nfa "aaaaab" = Some (0, 5));
   assert (Multi_nfa.match_prefix nfa "bbbbb" = Some (0, 0));
   assert (Multi_nfa.match_prefix nfa "abbbbb" = Some (0, 1))
-

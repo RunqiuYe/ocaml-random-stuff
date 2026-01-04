@@ -1,0 +1,4 @@
+(library
+ (name lexing)
+ (modules lexbuf lexer)
+ (libraries regex_core))

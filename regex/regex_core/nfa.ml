@@ -63,12 +63,12 @@ let rec build_frag (regex : Regex.t) (id_base : int) : nfa_fragment * int =
           outs = frag.outs @ [ out ];
         },
         base + 1 )
-  | Multiple r -> 
-    let frag, base = build_frag r id_base in 
-    let out2 = ref (make_state Undetermined 0) in 
-    let s = make_state (Split {out1 = ref frag.start; out2}) base in
-    List.iter (fun sref -> sref := s) frag.outs;
-    ( {start = frag.start; outs = [out2]}, base + 1)
+  | Multiple r ->
+      let frag, base = build_frag r id_base in
+      let out2 = ref (make_state Undetermined 0) in
+      let s = make_state (Split { out1 = ref frag.start; out2 }) base in
+      List.iter (fun sref -> sref := s) frag.outs;
+      ({ start = frag.start; outs = [ out2 ] }, base + 1)
 
 let rec get_next next_states id_set acc =
   match next_states with

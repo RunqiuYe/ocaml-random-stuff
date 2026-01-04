@@ -61,12 +61,12 @@ let rec build_frag (regex : Regex.t) (id_base : int) : nfa_fragment * int =
           outs = frag.outs @ [ out ];
         },
         base + 1 )
-  | Multiple r -> 
-    let frag, base = build_frag r id_base in 
-    let out = ref (make_state Undetermined 0) in 
-    let s = make_state (Split [ref frag.start; out]) base in
-    List.iter (fun sref -> sref := s) frag.outs;
-    ( {start = frag.start; outs = [out]}, base + 1)
+  | Multiple r ->
+      let frag, base = build_frag r id_base in
+      let out = ref (make_state Undetermined 0) in
+      let s = make_state (Split [ ref frag.start; out ]) base in
+      List.iter (fun sref -> sref := s) frag.outs;
+      ({ start = frag.start; outs = [ out ] }, base + 1)
 
 let rec get_next next_states id_set acc =
   match next_states with
@@ -84,7 +84,7 @@ let of_regex regex id_base i =
   let frag, id_base = build_frag regex id_base in
   let acc = make_state (Accept i) (id_base + 1) in
   List.iter (fun sref -> sref := acc) frag.outs;
-  frag.start, id_base + 2
+  (frag.start, id_base + 2)
 
 let compile regex_list =
   let rec build_frags regex_list id_base i acc =
@@ -120,7 +120,9 @@ let accept_patterns t =
 let match_patterns t s =
   let chars = String.to_seq s |> List.of_seq in
   let rec consume chars t =
-    match chars with [] -> accept_patterns t | c :: rest -> consume rest (step c t)
+    match chars with
+    | [] -> accept_patterns t
+    | c :: rest -> consume rest (step c t)
   in
   consume chars t
 
